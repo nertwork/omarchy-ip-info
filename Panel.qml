@@ -17,13 +17,7 @@ Panel {
   readonly property var displayModes: ["both", "private", "public", "icon"]
   property string displayMode: "both"
 
-  readonly property string configFilePath: {
-    var url = String(Qt.resolvedUrl("config.json"))
-    if (url.indexOf("file://") === 0) {
-      url = url.substring(7)
-    }
-    return decodeURIComponent(url)
-  }
+  readonly property string configFilePath: (Quickshell.env("XDG_STATE_HOME") || (Quickshell.env("HOME") + "/.local/state")) + "/omarchy/settings/jfarr.ip-info.json"
 
   function normalizeMode(m) {
     if (!m) return "both"
@@ -35,19 +29,8 @@ Panel {
 
   function setDisplayMode(mode) {
     var norm = normalizeMode(mode)
+    if (root.displayMode === norm) return
     root.displayMode = norm
-
-    if (root.bar && root.bar.shell && typeof root.bar.shell.updateEntryInline === "function") {
-      var nextSettings = {}
-      if (root.settings && typeof root.settings === "object") {
-        for (var k in root.settings) {
-          nextSettings[k] = root.settings[k]
-        }
-      }
-      nextSettings.id = root.moduleName
-      nextSettings.displayMode = norm
-      root.bar.shell.updateEntryInline(root.moduleName, nextSettings)
-    }
 
     try {
       var cfg = {}
@@ -58,7 +41,7 @@ Panel {
       cfg.displayMode = norm
       configFile.setText(JSON.stringify(cfg, null, 2) + "\n")
     } catch (e) {
-      console.warn("jfarr.ip-info: failed writing config.json: " + e)
+      console.warn("jfarr.ip-info: failed writing settings: " + e)
     }
   }
 
@@ -182,9 +165,38 @@ Panel {
     }
   }
 
-  // Fast local network polling (every 10s)
+  // Realtime kernel netlink watcher for address & route changes
+  Process {
+    id: netMonitorProc
+    command: ["ip", "monitor", "address", "route"]
+    running: true
+    stdout: SplitParser {
+      onRead: function(line) {
+        netDebounceTimer.restart()
+      }
+    }
+    onExited: netMonitorRestartTimer.restart()
+  }
+
   Timer {
-    interval: 10000
+    id: netMonitorRestartTimer
+    interval: 2000
+    repeat: false
+    onTriggered: netMonitorProc.running = true
+  }
+
+  Timer {
+    id: netDebounceTimer
+    interval: 350
+    repeat: false
+    onTriggered: {
+      if (!localProc.running) localProc.running = true
+    }
+  }
+
+  // Fallback local network polling (every 30s)
+  Timer {
+    interval: 30000
     running: true
     repeat: true
     onTriggered: {
@@ -212,6 +224,8 @@ Panel {
   }
 
   Component.onCompleted: {
+    var stateDir = (Quickshell.env("XDG_STATE_HOME") || (Quickshell.env("HOME") + "/.local/state")) + "/omarchy/settings"
+    Quickshell.execDetached(["mkdir", "-p", stateDir])
     var fromShell = root.setting("displayMode", null)
     if (fromShell) {
       root.displayMode = root.normalizeMode(fromShell)
@@ -241,7 +255,13 @@ Panel {
       onStreamFinished: {
         try {
           var parsed = JSON.parse(text)
+          var prevIp = root.privateIp
+          var prevGw = root.gatewayIp
           root.localData = parsed
+          // If IP or default gateway changed, trigger immediate public IP re-probe
+          if (prevIp && parsed && parsed.primary && (parsed.primary.ip !== prevIp || parsed.primary.gateway !== prevGw)) {
+            if (!publicForceProc.running) publicForceProc.running = true
+          }
         } catch (e) {
           console.warn("jfarr.ip-info: error parsing local data: " + e)
         }
