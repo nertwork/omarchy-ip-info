@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "jfarr.ip-info",
+  "name": "IP Info",
+  "version": "1.0.0",
+  "author": "jfarr",
+  "license": "MIT",
+  "repository": "https://github.com/nertwork/omarchy-ip-info",
+  "description": "Primary private and public IP address monitor with network interface inspection, gateway ping, and one-click clipboard copying.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "activation": "on-demand",
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "IP Info",
+    "description": "Primary private & public IP addresses with interface details and one-click clipboard copying",
+    "category": "Widgets",
+    "aliases": [
+      "ip",
+      "ip-info",
+      "ipinfo",
+      "public-ip"
+    ],
+    "defaultSection": "left",
+    "allowMultiple": false,
+    "defaults": {
+      "displayMode": "both"
+    },
+    "schema": [
+      {
+        "key": "displayMode",
+        "type": "enum",
+        "label": "Bar Display Mode",
+        "options": [
+          "both",
+          "private",
+          "public",
+          "icon"
+        ],
+        "defaultValue": "both",
+        "description": "Information displayed on the status bar: both (private and public IP), private (primary interface IP), public (external IP), or icon (network icon only)."
+      }
+    ]
+  }
+}
