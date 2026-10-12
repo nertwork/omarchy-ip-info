@@ -22,9 +22,12 @@ A polished, native Omarchy status bar panel and widget providing comprehensive n
 - **Interactive In-Panel Mode Selector**:
   - Switch display modes instantly inside the popover card using the interactive `Both | Private | Public | Icon` button group.
   - Right-click the status bar widget to instantly cycle through modes without opening the popover.
-- **Dual Persistence Architecture**:
-  - Updates `~/.config/omarchy/shell.json` reactively via `root.bar.shell.updateEntryInline()`, keeping multi-monitor bar instances synchronized in real time.
-  - Automatically persists the active mode to local `config.json` via `Quickshell.Io.FileView` as an independent fallback.
+- **Seamless State Persistence**:
+  - Automatically persists the active mode to `~/.local/state/omarchy/settings/jfarr.ip-info.json` via `Quickshell.Io.FileView` without restarting or flickering the shell.
+  - Supports initial default overrides via `displayMode` in `~/.config/omarchy/shell.json`.
+- **Real-Time Kernel Netlink Monitoring**:
+  - Uses `ip monitor address route` to detect address assignment, interface up/down events, and default routing changes instantly in microseconds.
+  - Automatically re-probes public IP when your connection or gateway changes.
 - **Comprehensive Network Telemetry**:
   - **Primary Interface**: IP address, CIDR prefix, subnet netmask, MAC hardware address, interface type (Ethernet, Wi-Fi), and active connection state.
   - **Public Network Details**: External IP, Autonomous System / ISP organization, city, region, country, and reverse DNS hostname.
