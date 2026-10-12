@@ -7,8 +7,8 @@ import "Model.js" as Model
 
 Panel {
   id: root
-  moduleName: "jfarr.ip-info"
-  ipcTarget: "jfarr.ip-info"
+  moduleName: "nertwork.ip-info"
+  ipcTarget: "nertwork.ip-info"
   manageIpc: false
 
   property var localData: ({})
@@ -17,7 +17,7 @@ Panel {
   readonly property var displayModes: ["both", "private", "public", "icon"]
   property string displayMode: "both"
 
-  readonly property string configFilePath: (Quickshell.env("XDG_STATE_HOME") || (Quickshell.env("HOME") + "/.local/state")) + "/omarchy/settings/jfarr.ip-info.json"
+  readonly property string configFilePath: (Quickshell.env("XDG_STATE_HOME") || (Quickshell.env("HOME") + "/.local/state")) + "/omarchy/settings/nertwork.ip-info.json"
 
   function normalizeMode(m) {
     if (!m) return "both"
@@ -41,7 +41,7 @@ Panel {
       cfg.displayMode = norm
       configFile.setText(JSON.stringify(cfg, null, 2) + "\n")
     } catch (e) {
-      console.warn("jfarr.ip-info: failed writing settings: " + e)
+      console.warn("nertwork.ip-info: failed writing settings: " + e)
     }
   }
 
@@ -71,7 +71,7 @@ Panel {
           }
         }
       } catch (e) {
-        console.warn("jfarr.ip-info: error parsing config.json: " + e)
+        console.warn("nertwork.ip-info: error parsing config.json: " + e)
       }
     }
   }
@@ -234,7 +234,7 @@ Panel {
   }
 
   IpcHandler {
-    target: "jfarr.ip-info"
+    target: "nertwork.ip-info"
 
     function open(): void { root.open() }
     function close(): void { root.close() }
@@ -263,7 +263,7 @@ Panel {
             if (!publicForceProc.running) publicForceProc.running = true
           }
         } catch (e) {
-          console.warn("jfarr.ip-info: error parsing local data: " + e)
+          console.warn("nertwork.ip-info: error parsing local data: " + e)
         }
       }
     }
@@ -279,7 +279,7 @@ Panel {
           var parsed = JSON.parse(text)
           root.publicData = parsed
         } catch (e) {
-          console.warn("jfarr.ip-info: error parsing public data: " + e)
+          console.warn("nertwork.ip-info: error parsing public data: " + e)
         }
       }
     }
@@ -295,7 +295,7 @@ Panel {
           var parsed = JSON.parse(text)
           root.publicData = parsed
         } catch (e) {
-          console.warn("jfarr.ip-info: error parsing force public data: " + e)
+          console.warn("nertwork.ip-info: error parsing force public data: " + e)
         }
       }
     }

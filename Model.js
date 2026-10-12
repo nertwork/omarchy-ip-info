@@ -1,4 +1,4 @@
-// Model.js - Helper functions for jfarr.ip-info Omarchy plugin
+// Model.js - Helper functions for nertwork.ip-info Omarchy plugin
 
 .pragma library
 

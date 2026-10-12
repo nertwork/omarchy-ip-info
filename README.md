@@ -23,7 +23,7 @@ A polished, native Omarchy status bar panel and widget providing comprehensive n
   - Switch display modes instantly inside the popover card using the interactive `Both | Private | Public | Icon` button group.
   - Right-click the status bar widget to instantly cycle through modes without opening the popover.
 - **Seamless State Persistence**:
-  - Automatically persists the active mode to `~/.local/state/omarchy/settings/jfarr.ip-info.json` via `Quickshell.Io.FileView` without restarting or flickering the shell.
+  - Automatically persists the active mode to `~/.local/state/omarchy/settings/nertwork.ip-info.json` via `Quickshell.Io.FileView` without restarting or flickering the shell.
   - Supports initial default overrides via `displayMode` in `~/.config/omarchy/shell.json`.
 - **Real-Time Kernel Netlink Monitoring**:
   - Uses `ip monitor address route` to detect address assignment, interface up/down events, and default routing changes instantly in microseconds.
@@ -64,30 +64,30 @@ omarchy plugin add https://github.com/nertwork/omarchy-ip-info.git --enable
 Clone directly into your Omarchy plugins directory:
 
 ```bash
-git clone git@github.com:nertwork/omarchy-ip-info.git ~/.config/omarchy/plugins/jfarr.ip-info
+git clone git@github.com:nertwork/omarchy-ip-info.git ~/.config/omarchy/plugins/nertwork.ip-info
 ```
 
 ### Updating
 
 ```bash
-omarchy plugin update jfarr.ip-info
+omarchy plugin update nertwork.ip-info
 ```
 
 ### Removal
 
 ```bash
-omarchy plugin remove jfarr.ip-info
+omarchy plugin remove nertwork.ip-info
 ```
 
 ---
 
 ## Configuration Reference
 
-Add `jfarr.ip-info` to `bar.layout.left`, `bar.layout.center`, or `bar.layout.right` in `~/.config/omarchy/shell.json`:
+Add `nertwork.ip-info` to `bar.layout.left`, `bar.layout.center`, or `bar.layout.right` in `~/.config/omarchy/shell.json`:
 
 ```json
 {
-  "id": "jfarr.ip-info",
+  "id": "nertwork.ip-info",
   "displayMode": "both"
 }
 ```
@@ -102,31 +102,31 @@ Add `jfarr.ip-info` to `bar.layout.left`, `bar.layout.center`, or `bar.layout.ri
 
 ## IPC Interface Reference
 
-IP Info exposes an IPC target under `jfarr.ip-info`. You can query status or trigger actions from terminal scripts or Hyprland keybindings.
+IP Info exposes an IPC target under `nertwork.ip-info`. You can query status or trigger actions from terminal scripts or Hyprland keybindings.
 
 ### Available IPC Commands
 
 ```bash
 # Query the current bar display mode
-omarchy-shell jfarr.ip-info getMode
+omarchy-shell nertwork.ip-info getMode
 
 # Set display mode ("both", "private", "public", "icon")
-omarchy-shell jfarr.ip-info setMode '{"mode":"private"}'
+omarchy-shell nertwork.ip-info setMode '{"mode":"private"}'
 
 # Cycle to the next display mode
-omarchy-shell jfarr.ip-info cycle
+omarchy-shell nertwork.ip-info cycle
 
 # Toggle popover panel open / closed
-omarchy-shell jfarr.ip-info toggle
+omarchy-shell nertwork.ip-info toggle
 
 # Open popover panel
-omarchy-shell jfarr.ip-info open
+omarchy-shell nertwork.ip-info open
 
 # Close popover panel
-omarchy-shell jfarr.ip-info close
+omarchy-shell nertwork.ip-info close
 
 # Refresh network telemetry
-omarchy-shell jfarr.ip-info refresh
+omarchy-shell nertwork.ip-info refresh
 ```
 
 ### Hyprland Keybinding Example
@@ -135,10 +135,10 @@ Add a shortcut to `~/.config/hypr/hyprland.conf`:
 
 ```ini
 # Toggle IP Info popover
-bind = $mainMod, I, exec, omarchy-shell jfarr.ip-info toggle
+bind = $mainMod, I, exec, omarchy-shell nertwork.ip-info toggle
 
 # Cycle IP Info bar display mode
-bind = $mainMod SHIFT, I, exec, omarchy-shell jfarr.ip-info cycle
+bind = $mainMod SHIFT, I, exec, omarchy-shell nertwork.ip-info cycle
 ```
 
 ---
