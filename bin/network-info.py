@@ -10,9 +10,32 @@ import json
 import subprocess
 import urllib.request
 import time
+import html
+import re
+import ipaddress
 
 CACHE_DIR = os.path.expanduser("~/.cache/omarchy")
 PUBLIC_CACHE_FILE = os.path.join(CACHE_DIR, "ip-info-public.json")
+
+def sanitize_str(val, max_len=128):
+    if not isinstance(val, str):
+        return ""
+    # Strip HTML and XML tags to prevent markup interpretation
+    cleaned = re.sub(r'<[^>]*>', '', val)
+    cleaned = html.unescape(cleaned)
+    # Strip control characters and dangerous quotes/brackets
+    cleaned = "".join(ch for ch in cleaned if ch.isprintable() and ch not in '<>"\'`')
+    return cleaned.strip()[:max_len]
+
+def validate_ip(val):
+    if not val or not isinstance(val, str):
+        return ""
+    cleaned = val.strip()
+    try:
+        ipaddress.ip_address(cleaned)
+        return cleaned
+    except ValueError:
+        return ""
 
 def prefix_to_netmask(prefix):
     try:
@@ -64,9 +87,9 @@ def get_local_info():
     if primary_dev:
         info["connected"] = True
         info["primary"] = {
-            "iface": primary_dev,
-            "ip": primary_src,
-            "gateway": primary_gw,
+            "iface": sanitize_str(primary_dev, 32),
+            "ip": validate_ip(primary_src),
+            "gateway": validate_ip(primary_gw),
             "mac": "",
             "type": "other",
             "operstate": "DOWN",
@@ -165,16 +188,19 @@ def get_local_info():
                             pass
 
                 for v4 in v4_list:
+                    ip_val = validate_ip(v4.get("ip"))
+                    if not ip_val:
+                        continue
                     info["interfaces"].append({
-                        "iface": ifname,
+                        "iface": sanitize_str(ifname, 32),
                         "type": itype,
-                        "ip": v4["ip"],
-                        "prefix": str(v4["prefix"]),
-                        "netmask": prefix_to_netmask(v4["prefix"]),
-                        "mac": mac,
+                        "ip": ip_val,
+                        "prefix": str(v4.get("prefix", "")),
+                        "netmask": prefix_to_netmask(v4.get("prefix", "")),
+                        "mac": sanitize_str(mac, 32),
                         "state": normalized_state,
                         "isP2P": "POINTOPOINT" in flags,
-                        "isPrimary": (ifname == primary_dev and v4["ip"] == info["primary"].get("ip"))
+                        "isPrimary": (ifname == primary_dev and ip_val == info["primary"].get("ip"))
                     })
     except Exception:
         pass
@@ -188,7 +214,7 @@ def get_local_info():
                 for line in r.stdout.splitlines():
                     if "time=" in line or "time<" in line:
                         part = line.split("time=")[-1] if "time=" in line else line.split("time<")[-1]
-                        info["primary"]["gatewayPingMs"] = part.split()[0].strip()
+                        info["primary"]["gatewayPingMs"] = sanitize_str(part.split()[0].strip(), 16)
                         break
         except Exception:
             pass
@@ -202,8 +228,9 @@ def get_local_info():
                 parts = line.split(":")
                 if len(parts) > 1:
                     for s in parts[1].strip().split():
-                        if s and not s.startswith("fd") and not s.startswith("fe80"):
-                            dns_set.add(s)
+                        validated = validate_ip(s)
+                        if validated and not validated.startswith("fd") and not validated.startswith("fe80"):
+                            dns_set.add(validated)
             info["dns"] = sorted(list(dns_set))
     except Exception:
         pass
@@ -242,14 +269,15 @@ def get_public_info(use_cache_fallback=True):
         req = urllib.request.Request("https://ipinfo.io/json", headers={"User-Agent": "curl/8.0.0"})
         with urllib.request.urlopen(req, timeout=3.0) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-            if data.get("ip"):
-                res["ip"] = data.get("ip", "").strip()
-                res["hostname"] = data.get("hostname", "")
-                res["city"] = data.get("city", "")
-                res["region"] = data.get("region", "")
-                res["country"] = data.get("country", "")
-                res["org"] = data.get("org", "")
-                res["loc"] = data.get("loc", "")
+            ip = validate_ip(data.get("ip"))
+            if ip:
+                res["ip"] = ip
+                res["hostname"] = sanitize_str(data.get("hostname", ""), 128)
+                res["city"] = sanitize_str(data.get("city", ""), 64)
+                res["region"] = sanitize_str(data.get("region", ""), 64)
+                res["country"] = sanitize_str(data.get("country", ""), 64)
+                res["org"] = sanitize_str(data.get("org", ""), 128)
+                res["loc"] = sanitize_str(data.get("loc", ""), 64)
                 res["status"] = "online"
     except Exception:
         pass
@@ -260,8 +288,9 @@ def get_public_info(use_cache_fallback=True):
             req = urllib.request.Request("https://api.ipify.org?format=json", headers={"User-Agent": "curl/8.0.0"})
             with urllib.request.urlopen(req, timeout=3.0) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
-                if data.get("ip"):
-                    res["ip"] = data.get("ip", "").strip()
+                ip = validate_ip(data.get("ip"))
+                if ip:
+                    res["ip"] = ip
                     res["status"] = "online"
         except Exception:
             pass
@@ -271,7 +300,8 @@ def get_public_info(use_cache_fallback=True):
         try:
             req = urllib.request.Request("https://icanhazip.com", headers={"User-Agent": "curl/8.0.0"})
             with urllib.request.urlopen(req, timeout=3.0) as resp:
-                ip = resp.read().decode("utf-8").strip()
+                raw_ip = resp.read().decode("utf-8").strip()
+                ip = validate_ip(raw_ip)
                 if ip:
                     res["ip"] = ip
                     res["status"] = "online"

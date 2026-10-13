@@ -390,6 +390,7 @@ Panel {
             spacing: Style.space(2)
 
             Text {
+              textFormat: Text.PlainText
               text: root.connected ? (root.primaryIface ? "Connected (" + root.primaryIface + ")" : "Network Connected") : "Disconnected"
               color: root.contentForeground
               font.family: root.contentFontFamily
@@ -462,6 +463,7 @@ Panel {
             }
 
             Text {
+              textFormat: Text.PlainText
               text: "Copied " + root.copiedLabel + " (" + root.copiedValue + ") to clipboard"
               color: root.contentForeground
               font.family: root.contentFontFamily
@@ -568,6 +570,7 @@ Panel {
                 spacing: Style.space(8)
 
                 Text {
+                  textFormat: Text.PlainText
                   text: root.privateIp ? root.privateIp + (root.cidrPrefix ? "/" + root.cidrPrefix : "") : "Not assigned"
                   color: root.contentForeground
                   font.family: root.contentFontFamily
@@ -585,6 +588,7 @@ Panel {
 
                   Text {
                     id: ifaceLabel
+                    textFormat: Text.PlainText
                     anchors.centerIn: parent
                     text: root.primaryIface
                     font.family: root.contentFontFamily
@@ -595,6 +599,7 @@ Panel {
               }
 
               Text {
+                textFormat: Text.PlainText
                 text: {
                   var meta = []
                   if (root.netmask) meta.push("Mask: " + root.netmask)
@@ -675,6 +680,7 @@ Panel {
               spacing: Style.space(2)
 
               Text {
+                textFormat: Text.PlainText
                 text: root.publicIp ? root.publicIp : (root.refreshing ? "Fetching public IP..." : "Offline / Unavailable")
                 color: root.contentForeground
                 font.family: root.contentFontFamily
@@ -683,6 +689,7 @@ Panel {
               }
 
               Text {
+                textFormat: Text.PlainText
                 visible: root.publicOrg !== ""
                 text: root.publicOrg
                 color: root.dimColor
@@ -693,6 +700,7 @@ Panel {
               }
 
               Text {
+                textFormat: Text.PlainText
                 visible: root.publicLocation !== ""
                 text: root.publicLocation
                 color: root.subDimColor
@@ -703,6 +711,7 @@ Panel {
               }
 
               Text {
+                textFormat: Text.PlainText
                 visible: root.publicHostname !== ""
                 text: "Host: " + root.publicHostname
                 color: root.subDimColor
@@ -778,6 +787,7 @@ Panel {
                 }
 
                 Text {
+                  textFormat: Text.PlainText
                   text: root.gatewayIp || "--"
                   color: root.contentForeground
                   font.family: root.contentFontFamily
@@ -827,6 +837,7 @@ Panel {
                 }
 
                 Text {
+                  textFormat: Text.PlainText
                   visible: root.dnsServers.length === 0
                   text: "--"
                   color: root.contentForeground
@@ -886,6 +897,7 @@ Panel {
                     spacing: Style.space(6)
 
                     Text {
+                      textFormat: Text.PlainText
                       text: modelData
                       color: root.contentForeground
                       font.family: root.contentFontFamily
@@ -968,6 +980,7 @@ Panel {
                 }
 
                 Text {
+                  textFormat: Text.PlainText
                   text: modelData.iface
                   font.family: root.contentFontFamily
                   font.pixelSize: Style.font.caption
@@ -986,6 +999,7 @@ Panel {
 
                   Text {
                     id: typeLabel
+                    textFormat: Text.PlainText
                     anchors.centerIn: parent
                     text: modelData.type.toUpperCase()
                     font.family: root.contentFontFamily
@@ -1003,6 +1017,7 @@ Panel {
                 spacing: Style.space(8)
 
                 Text {
+                  textFormat: Text.PlainText
                   text: modelData.prefix && modelData.prefix !== "32" ? (modelData.ip + "/" + modelData.prefix) : modelData.ip
                   font.family: root.contentFontFamily
                   font.pixelSize: Style.font.caption
