@@ -3,7 +3,7 @@
   "id": "nertwork.ip-info",
   "name": "IP Info",
   "version": "1.0.0",
-  "author": "jfarr",
+  "author": "nertwork",
   "license": "MIT",
   "repository": "https://github.com/nertwork/omarchy-ip-info",
   "description": "Primary private and public IP address monitor with network interface inspection, gateway ping, and one-click clipboard copying.",
