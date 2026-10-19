@@ -1,5 +1,8 @@
 # IP Info for Omarchy
 
+> [!NOTE]
+> **Unified Successor Available:** Check out [**`nertwork.network-info` (omarchy-network-info)**](https://github.com/nertwork/omarchy-network-info) for the full unified Network & IP Info widget with stacked/compact live bandwidth speed modes, mirrored dual-series throughput history graph, per-interface live speed, and active TCP app attribution.
+
 A polished, native Omarchy status bar panel and widget providing comprehensive network telemetry, public and local IP monitoring, gateway ping latency, DNS server inspection, and one-click clipboard copying.
 
 <p align="center">
