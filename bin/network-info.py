@@ -5,8 +5,10 @@ Supports --local, --public, and --all output modes.
 """
 
 import sys
+sys.dont_write_bytecode = True
 import os
 import json
+import signal
 import subprocess
 import urllib.request
 import time
@@ -16,6 +18,11 @@ import ipaddress
 
 CACHE_DIR = os.path.expanduser("~/.cache/omarchy")
 PUBLIC_CACHE_FILE = os.path.join(CACHE_DIR, "ip-info-public.json")
+MAX_HTTP_RESPONSE_BYTES = 16384
+MAX_CACHE_FILE_BYTES = 16384
+PUBLIC_ENDPOINT_TIMEOUT_SECS = 3.0
+PUBLIC_FETCH_DEADLINE_SECS = 6.0
+HELPER_HARD_DEADLINE_SECS = 10
 
 def sanitize_str(val, max_len=128):
     if not isinstance(val, str):
@@ -237,19 +244,75 @@ def get_local_info():
 
     return info
 
+def _alarm_handler(_signum, _frame):
+    raise TimeoutError("network-info helper deadline exceeded")
+
+
+def read_bounded_cache(path, max_bytes=MAX_CACHE_FILE_BYTES):
+    if not os.path.isfile(path):
+        return None
+    try:
+        with open(path, "rb") as cf:
+            raw = cf.read(max_bytes + 1)
+        if len(raw) > max_bytes:
+            return None
+        data = json.loads(raw.decode("utf-8"))
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None
+
+
+def fetch_bounded_url(url, headers, deadline, max_bytes=MAX_HTTP_RESPONSE_BYTES):
+    remaining = deadline - time.monotonic()
+    if remaining <= 0.05:
+        raise TimeoutError("public IP transfer deadline exceeded")
+    sock_timeout = min(PUBLIC_ENDPOINT_TIMEOUT_SECS, remaining)
+    req = urllib.request.Request(url, headers=headers)
+    with urllib.request.urlopen(req, timeout=sock_timeout) as resp:
+        cl = resp.headers.get("Content-Length") if hasattr(resp, "headers") and resp.headers else None
+        if cl is not None:
+            try:
+                cl_int = int(cl)
+            except ValueError:
+                cl_int = 0
+            if cl_int > max_bytes:
+                raise ValueError("HTTP Content-Length exceeds maximum byte limit")
+        chunks = []
+        total = 0
+        while True:
+            rem = deadline - time.monotonic()
+            if rem <= 0:
+                raise TimeoutError("public IP transfer deadline exceeded")
+            try:
+                if hasattr(resp, "fp") and resp.fp is not None and hasattr(resp.fp, "raw"):
+                    sock = getattr(resp.fp.raw, "_sock", None)
+                    if sock is not None:
+                        sock.settimeout(min(PUBLIC_ENDPOINT_TIMEOUT_SECS, rem))
+            except Exception:
+                pass
+            read_fn = getattr(resp, "read1", resp.read)
+            chunk = read_fn(min(4096, max_bytes + 1 - total))
+            if not chunk:
+                break
+            total += len(chunk)
+            if total > max_bytes:
+                raise ValueError("HTTP response exceeds maximum byte limit")
+            chunks.append(chunk)
+        return b"".join(chunks).decode("utf-8")
+
+
 def get_public_info(use_cache_fallback=True):
     # Try reading cache if fresh (< 5 minutes)
     now = time.time()
-    if use_cache_fallback and os.path.isfile(PUBLIC_CACHE_FILE):
-        try:
-            with open(PUBLIC_CACHE_FILE, "r") as cf:
-                cached = json.load(cf)
-                cached_time = cached.get("_timestamp", 0)
-                if now - cached_time < 300 and cached.get("ip"):
-                    cached["fromCache"] = True
-                    return cached
-        except Exception:
-            pass
+    if use_cache_fallback:
+        cached = read_bounded_cache(PUBLIC_CACHE_FILE)
+        if cached:
+            cached_time = cached.get("_timestamp", 0)
+            valid_cached_ip = validate_ip(cached.get("ip", ""))
+            if isinstance(cached_time, (int, float)) and now - cached_time < 300 and valid_cached_ip:
+                cached["ip"] = valid_cached_ip
+                cached["fromCache"] = True
+                return cached
 
     res = {
         "ip": "",
@@ -264,47 +327,66 @@ def get_public_info(use_cache_fallback=True):
         "fromCache": False
     }
 
-    # 1. Primary: ipinfo.io/json
+    req_headers = {
+        "User-Agent": "OmarchyIPInfo/1.0",
+        "Accept": "application/json"
+    }
+    deadline = time.monotonic() + PUBLIC_FETCH_DEADLINE_SECS
+    prev_handler = None
     try:
-        req = urllib.request.Request("https://ipinfo.io/json", headers={"User-Agent": "curl/8.0.0"})
-        with urllib.request.urlopen(req, timeout=3.0) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            ip = validate_ip(data.get("ip"))
-            if ip:
-                res["ip"] = ip
-                res["hostname"] = sanitize_str(data.get("hostname", ""), 128)
-                res["city"] = sanitize_str(data.get("city", ""), 64)
-                res["region"] = sanitize_str(data.get("region", ""), 64)
-                res["country"] = sanitize_str(data.get("country", ""), 64)
-                res["org"] = sanitize_str(data.get("org", ""), 128)
-                res["loc"] = sanitize_str(data.get("loc", ""), 64)
-                res["status"] = "online"
+        prev_handler = signal.signal(signal.SIGALRM, _alarm_handler)
+        signal.setitimer(signal.ITIMER_REAL, PUBLIC_FETCH_DEADLINE_SECS)
     except Exception:
         pass
 
-    # 2. Fallback: api.ipify.org
-    if not res["ip"]:
-        try:
-            req = urllib.request.Request("https://api.ipify.org?format=json", headers={"User-Agent": "curl/8.0.0"})
-            with urllib.request.urlopen(req, timeout=3.0) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                ip = validate_ip(data.get("ip"))
-                if ip:
-                    res["ip"] = ip
-                    res["status"] = "online"
-        except Exception:
-            pass
+    try:
+        # 1. Primary: ipinfo.io/json
+        if time.monotonic() < deadline:
+            try:
+                body = fetch_bounded_url("https://ipinfo.io/json", req_headers, deadline)
+                data = json.loads(body)
+                if isinstance(data, dict):
+                    ip = validate_ip(data.get("ip"))
+                    if ip:
+                        res["ip"] = ip
+                        res["hostname"] = sanitize_str(data.get("hostname", ""), 128)
+                        res["city"] = sanitize_str(data.get("city", ""), 64)
+                        res["region"] = sanitize_str(data.get("region", ""), 64)
+                        res["country"] = sanitize_str(data.get("country", ""), 64)
+                        res["org"] = sanitize_str(data.get("org", ""), 128)
+                        res["loc"] = sanitize_str(data.get("loc", ""), 64)
+                        res["status"] = "online"
+            except Exception:
+                pass
 
-    # 3. Fallback: icanhazip.com
-    if not res["ip"]:
-        try:
-            req = urllib.request.Request("https://icanhazip.com", headers={"User-Agent": "curl/8.0.0"})
-            with urllib.request.urlopen(req, timeout=3.0) as resp:
-                raw_ip = resp.read().decode("utf-8").strip()
+        # 2. Fallback: api.ipify.org
+        if not res["ip"] and time.monotonic() < deadline:
+            try:
+                body = fetch_bounded_url("https://api.ipify.org?format=json", req_headers, deadline)
+                data = json.loads(body)
+                if isinstance(data, dict):
+                    ip = validate_ip(data.get("ip"))
+                    if ip:
+                        res["ip"] = ip
+                        res["status"] = "online"
+            except Exception:
+                pass
+
+        # 3. Fallback: icanhazip.com
+        if not res["ip"] and time.monotonic() < deadline:
+            try:
+                raw_ip = fetch_bounded_url("https://icanhazip.com", {"User-Agent": "OmarchyIPInfo/1.0"}, deadline).strip()
                 ip = validate_ip(raw_ip)
                 if ip:
                     res["ip"] = ip
                     res["status"] = "online"
+            except Exception:
+                pass
+    finally:
+        try:
+            signal.setitimer(signal.ITIMER_REAL, 0)
+            if prev_handler is not None:
+                signal.signal(signal.SIGALRM, prev_handler)
         except Exception:
             pass
 
@@ -316,21 +398,26 @@ def get_public_info(use_cache_fallback=True):
                 json.dump(res, cf)
         except Exception:
             pass
-    elif use_cache_fallback and os.path.isfile(PUBLIC_CACHE_FILE):
+    elif use_cache_fallback:
         # Stale cache fallback if available
-        try:
-            with open(PUBLIC_CACHE_FILE, "r") as cf:
-                cached = json.load(cf)
-                if cached.get("ip"):
-                    cached["fromCache"] = True
-                    cached["status"] = "stale"
-                    return cached
-        except Exception:
-            pass
+        cached = read_bounded_cache(PUBLIC_CACHE_FILE)
+        if cached:
+            valid_cached_ip = validate_ip(cached.get("ip", ""))
+            if valid_cached_ip:
+                cached["ip"] = valid_cached_ip
+                cached["fromCache"] = True
+                cached["status"] = "stale"
+                return cached
 
     return res
 
+
 def main():
+    try:
+        signal.signal(signal.SIGALRM, _alarm_handler)
+        signal.alarm(HELPER_HARD_DEADLINE_SECS)
+    except Exception:
+        pass
     mode = "--local"
     if len(sys.argv) > 1:
         mode = sys.argv[1]

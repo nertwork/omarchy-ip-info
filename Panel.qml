@@ -140,9 +140,9 @@ Panel {
 
   function copyToClipboard(val, label) {
     if (!val) return
-    Quickshell.execDetached(["bash", "-c", "printf %s " + Util.shellQuote(val) + " | wl-copy"])
-    root.copiedValue = val
-    root.copiedLabel = label || val
+    Quickshell.execDetached(["wl-copy", "--", String(val)])
+    root.copiedValue = String(val)
+    root.copiedLabel = label || String(val)
     copiedTimer.restart()
   }
 
@@ -253,6 +253,7 @@ Panel {
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
+        if (!text || text.length > 65536) return
         try {
           var parsed = JSON.parse(text)
           var prevIp = root.privateIp
@@ -269,12 +270,26 @@ Panel {
     }
   }
 
+  Timer {
+    id: localProcWatchdog
+    interval: 8000
+    running: localProc.running
+    repeat: false
+    onTriggered: {
+      if (localProc.running) {
+        console.warn("nertwork.ip-info: localProc watchdog timeout, terminating process")
+        localProc.running = false
+      }
+    }
+  }
+
   Process {
     id: publicProc
     command: ["python3", root.scriptPath, "--public-cached"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
+        if (!text || text.length > 65536) return
         try {
           var parsed = JSON.parse(text)
           root.publicData = parsed
@@ -285,18 +300,45 @@ Panel {
     }
   }
 
+  Timer {
+    id: publicProcWatchdog
+    interval: 10000
+    running: publicProc.running
+    repeat: false
+    onTriggered: {
+      if (publicProc.running) {
+        console.warn("nertwork.ip-info: publicProc watchdog timeout, terminating process")
+        publicProc.running = false
+      }
+    }
+  }
+
   Process {
     id: publicForceProc
     command: ["python3", root.scriptPath, "--public"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
+        if (!text || text.length > 65536) return
         try {
           var parsed = JSON.parse(text)
           root.publicData = parsed
         } catch (e) {
           console.warn("nertwork.ip-info: error parsing force public data: " + e)
         }
+      }
+    }
+  }
+
+  Timer {
+    id: publicForceProcWatchdog
+    interval: 10000
+    running: publicForceProc.running
+    repeat: false
+    onTriggered: {
+      if (publicForceProc.running) {
+        console.warn("nertwork.ip-info: publicForceProc watchdog timeout, terminating process")
+        publicForceProc.running = false
       }
     }
   }
