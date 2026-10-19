@@ -62,14 +62,6 @@ Or via HTTPS:
 omarchy plugin add https://github.com/nertwork/omarchy-ip-info.git --enable
 ```
 
-### Manual Installation
-
-Clone directly into your Omarchy plugins directory:
-
-```bash
-git clone git@github.com:nertwork/omarchy-ip-info.git ~/.config/omarchy/plugins/nertwork.ip-info
-```
-
 ### Updating
 
 ```bash
@@ -159,6 +151,16 @@ bind = $mainMod SHIFT, I, exec, omarchy-shell nertwork.ip-info cycle
 | **Click DNS Pill** | Copy that specific DNS server to clipboard |
 | **Click "Copy All DNS"** | Copy all active DNS servers as comma-separated list |
 | **`Esc`** | Close panel |
+
+---
+
+## Dependencies
+
+- **Omarchy (`omarchy-shell`)**: Quickshell runtime and theme system.
+- **`iproute2` (`ip`)**: Kernel netlink monitoring (`ip monitor address route`) and routing/address inspection.
+- **`curl`**: Public IP and GeoIP/ASN telemetry lookup.
+- **`iputils` (`ping`)**: Default gateway round-trip latency probing.
+- **`wl-clipboard` (`wl-copy`)**: One-click clipboard copying for IP and DNS addresses.
 
 ---
 
