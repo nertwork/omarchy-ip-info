@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 import "Model.js" as Model
 
@@ -129,7 +130,7 @@ Panel {
   property string copiedValue: ""
   property string copiedLabel: ""
 
-  readonly property color contentForeground: bar ? bar.foreground : Color.foreground
+  readonly property color contentForeground: bar ? bar.foreground : Commons.Color.foreground
   readonly property string contentFontFamily: bar ? bar.fontFamily : Style.font.family
   readonly property color dimColor: Qt.darker(contentForeground, 1.4)
   readonly property color subDimColor: Qt.darker(contentForeground, 1.7)
@@ -415,7 +416,7 @@ Panel {
             id: heroIcon
             textFormat: Text.PlainText
             text: Model.typeIcon(root.primaryType)
-            color: root.connected ? Color.accent : root.dimColor
+            color: root.connected ? Commons.Color.accent : root.dimColor
             font.family: root.contentFontFamily
             font.pixelSize: Style.font.display
             anchors.left: parent.left
@@ -467,7 +468,7 @@ Panel {
             anchors.verticalCenter: parent.verticalCenter
             iconText: Model.refreshIcon()
             tooltipText: "Refresh Network & IP Info"
-            hoverColor: Color.accent
+            hoverColor: Commons.Color.accent
             onClicked: root.refreshAll(true)
 
             RotationAnimation {
@@ -488,9 +489,9 @@ Panel {
           width: parent.width
           height: Style.space(26)
           radius: Style.cornerRadius
-          color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.22)
+          color: Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.22)
           border.width: 1
-          border.color: Color.accent
+          border.color: Commons.Color.accent
 
           Row {
             anchors.centerIn: parent
@@ -498,7 +499,7 @@ Panel {
 
             Text {
               text: Model.checkIcon()
-              color: Color.accent
+              color: Commons.Color.accent
               font.family: root.contentFontFamily
               font.pixelSize: Style.font.caption
               font.bold: true
@@ -544,7 +545,7 @@ Panel {
             value: root.displayMode
             foreground: root.contentForeground
             background: Qt.rgba(root.contentForeground.r, root.contentForeground.g, root.contentForeground.b, 0.05)
-            accent: Color.accent
+            accent: Commons.Color.accent
             fontFamily: root.contentFontFamily
             fontSize: Style.font.caption
             onChanged: function(v) {
@@ -568,11 +569,11 @@ Panel {
           implicitHeight: privateRow.implicitHeight + Style.space(16)
           radius: Style.cornerRadius
           color: privateMouse.containsMouse
-            ? Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.12)
+            ? Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.12)
             : Qt.rgba(root.contentForeground.r, root.contentForeground.g, root.contentForeground.b, 0.05)
           border.width: 1
           border.color: privateMouse.containsMouse
-            ? Color.accent
+            ? Commons.Color.accent
             : Qt.rgba(root.contentForeground.r, root.contentForeground.g, root.contentForeground.b, 0.1)
 
           Behavior on color { ColorAnimation { duration: 100 } }
@@ -599,7 +600,7 @@ Panel {
               text: Model.typeIcon(root.primaryType)
               font.family: root.contentFontFamily
               font.pixelSize: Style.font.title
-              color: Color.accent
+              color: Commons.Color.accent
               anchors.verticalCenter: parent.verticalCenter
             }
 
@@ -660,7 +661,7 @@ Panel {
               anchors.verticalCenter: parent.verticalCenter
               iconText: root.copiedValue === root.privateIp ? Model.checkIcon() : Model.copyIcon()
               tooltipText: "Copy private IP (" + root.privateIp + ")"
-              hoverColor: Color.accent
+              hoverColor: Commons.Color.accent
               onClicked: root.copyToClipboard(root.privateIp, "Private IP")
             }
           }
@@ -681,11 +682,11 @@ Panel {
           implicitHeight: publicRow.implicitHeight + Style.space(16)
           radius: Style.cornerRadius
           color: publicMouse.containsMouse
-            ? Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.12)
+            ? Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.12)
             : Qt.rgba(root.contentForeground.r, root.contentForeground.g, root.contentForeground.b, 0.05)
           border.width: 1
           border.color: publicMouse.containsMouse
-            ? Color.accent
+            ? Commons.Color.accent
             : Qt.rgba(root.contentForeground.r, root.contentForeground.g, root.contentForeground.b, 0.1)
 
           Behavior on color { ColorAnimation { duration: 100 } }
@@ -712,7 +713,7 @@ Panel {
               text: Model.publicIcon()
               font.family: root.contentFontFamily
               font.pixelSize: Style.font.title
-              color: Color.accent
+              color: Commons.Color.accent
               anchors.verticalCenter: parent.verticalCenter
             }
 
@@ -768,7 +769,7 @@ Panel {
               anchors.verticalCenter: parent.verticalCenter
               iconText: root.copiedValue === root.publicIp ? Model.checkIcon() : Model.copyIcon()
               tooltipText: "Copy public IP (" + root.publicIp + ")"
-              hoverColor: Color.accent
+              hoverColor: Commons.Color.accent
               onClicked: root.copyToClipboard(root.publicIp, "Public IP")
             }
           }
@@ -846,7 +847,7 @@ Panel {
                 tooltipText: "Copy gateway IP (" + root.gatewayIp + ")"
                 size: Style.space(18)
                 fontSize: Style.font.caption
-                hoverColor: Color.accent
+                hoverColor: Commons.Color.accent
                 onClicked: root.copyToClipboard(root.gatewayIp, "Gateway IP")
               }
             }
@@ -897,7 +898,7 @@ Panel {
                 tooltipText: "Copy all DNS servers (" + root.dnsServers.join(", ") + ")"
                 size: Style.space(18)
                 fontSize: Style.font.caption
-                hoverColor: Color.accent
+                hoverColor: Commons.Color.accent
                 onClicked: root.copyToClipboard(root.dnsServers.join(", "), "All DNS Servers")
               }
             }
@@ -915,11 +916,11 @@ Panel {
                   width: dnsPillContent.implicitWidth + Style.space(14)
                   radius: Style.cornerRadius
                   color: dnsPillMouse.containsMouse
-                    ? Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.15)
+                    ? Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.15)
                     : Qt.rgba(root.contentForeground.r, root.contentForeground.g, root.contentForeground.b, 0.06)
                   border.width: 1
                   border.color: dnsPillMouse.containsMouse
-                    ? Color.accent
+                    ? Commons.Color.accent
                     : Qt.rgba(root.contentForeground.r, root.contentForeground.g, root.contentForeground.b, 0.12)
 
                   Behavior on color { ColorAnimation { duration: 100 } }
@@ -949,7 +950,7 @@ Panel {
 
                     Text {
                       text: root.copiedValue === modelData ? Model.checkIcon() : Model.copyIcon()
-                      color: root.copiedValue === modelData ? Color.accent : root.dimColor
+                      color: root.copiedValue === modelData ? Commons.Color.accent : root.dimColor
                       font.family: root.contentFontFamily
                       font.pixelSize: Style.font.caption - 2
                       anchors.verticalCenter: parent.verticalCenter
@@ -986,11 +987,11 @@ Panel {
               height: Style.space(34)
               radius: Style.cornerRadius
               color: ifaceMouse.containsMouse
-                ? Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.12)
+                ? Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.12)
                 : Qt.rgba(root.contentForeground.r, root.contentForeground.g, root.contentForeground.b, 0.04)
               border.width: 1
               border.color: ifaceMouse.containsMouse
-                ? Color.accent
+                ? Commons.Color.accent
                 : Qt.rgba(root.contentForeground.r, root.contentForeground.g, root.contentForeground.b, 0.08)
 
               Behavior on color { ColorAnimation { duration: 100 } }
@@ -1017,7 +1018,7 @@ Panel {
                   text: Model.typeIcon(modelData.type)
                   font.family: root.contentFontFamily
                   font.pixelSize: Style.font.caption
-                  color: Color.accent
+                  color: Commons.Color.accent
                   anchors.verticalCenter: parent.verticalCenter
                 }
 
@@ -1073,7 +1074,7 @@ Panel {
                   tooltipText: "Copy " + modelData.iface + " IP (" + modelData.ip + (modelData.prefix ? "/" + modelData.prefix : "") + ")"
                   size: Style.space(20)
                   fontSize: Style.font.caption
-                  hoverColor: Color.accent
+                  hoverColor: Commons.Color.accent
                   onClicked: root.copyToClipboard(modelData.ip, modelData.iface)
                 }
               }

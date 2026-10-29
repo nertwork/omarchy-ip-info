@@ -262,13 +262,38 @@ def read_bounded_cache(path, max_bytes=MAX_CACHE_FILE_BYTES):
         return None
 
 
+class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Reject all HTTP 3xx redirects immediately without draining redirect response bodies."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if fp is not None:
+            try:
+                fp.close()
+            except Exception:
+                pass
+        raise urllib.error.HTTPError(req.full_url, code, msg, headers, None)
+
+    def http_error_301(self, req, fp, code, msg, headers):
+        if fp is not None:
+            try:
+                fp.close()
+            except Exception:
+                pass
+        raise urllib.error.HTTPError(req.full_url, code, msg, headers, None)
+
+    http_error_302 = http_error_303 = http_error_307 = http_error_308 = http_error_301
+
+
+_NO_REDIRECT_OPENER = urllib.request.build_opener(NoRedirectHandler())
+
+
 def fetch_bounded_url(url, headers, deadline, max_bytes=MAX_HTTP_RESPONSE_BYTES):
     remaining = deadline - time.monotonic()
     if remaining <= 0.05:
         raise TimeoutError("public IP transfer deadline exceeded")
     sock_timeout = min(PUBLIC_ENDPOINT_TIMEOUT_SECS, remaining)
     req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, timeout=sock_timeout) as resp:
+    with _NO_REDIRECT_OPENER.open(req, timeout=sock_timeout) as resp:
         cl = resp.headers.get("Content-Length") if hasattr(resp, "headers") and resp.headers else None
         if cl is not None:
             try:
