@@ -1,5 +1,7 @@
 # IP Info for Omarchy
 
+[![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/nertwork/omarchy-ip-info?utm_source=oss&utm_medium=github&utm_campaign=nertwork%2Fomarchy-ip-info&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)](https://coderabbit.ai)
+
 > [!NOTE]
 > **Unified Successor Available:** Check out [**`nertwork.network-info` (omarchy-network-info)**](https://github.com/nertwork/omarchy-network-info) for the full unified Network & IP Info widget with stacked/compact live bandwidth speed modes, mirrored dual-series throughput history graph, per-interface live speed, and active TCP app attribution.
 
